@@ -11,7 +11,7 @@ import TeacherPage from "./Teacher";
 import TeacherJoinPage from "./TeacherJoinPage";
 import { toast } from "sonner";
 
-const WS_URL = "ws://localhost:3001";
+const WS_URL = "wss://javacourselive.onrender.com/";
 
 type Role = "student" | "teacher";
 
@@ -30,7 +30,14 @@ function JoinPage({ onConnect }: { onConnect: (name: string) => void }) {
 
   return (
     <div className="join">
-      <h2>Start Coding</h2>
+      <div className="join-header">
+        <h2>Welcome to 3044 Java Course Live Coding!</h2>
+        <img
+          src="./ox.webp"
+          alt="3044 Logo"
+          style={{ width: 60, height: 60 }}
+        />
+      </div>
       <input
         placeholder="Enter your name"
         type="text"

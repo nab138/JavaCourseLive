@@ -1,0 +1,29 @@
+.output-container {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 999;
+}
+
+.output {
+  background-color: black;
+  padding: 10px;
+  color: white;
+  border-radius: 5px;
+  text-align: left;
+  margin: 0;
+}
+
+.run-button {
+  position: absolute;
+  bottom: 25px;
+  right: 25px;
+  background-color: #4caf50; /* Green */
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  z-index: 1000;
+}

@@ -1,15 +1,11 @@
 import { useState, useRef, useEffect } from "react";
 import "./App.css";
-import {
-  HashRouter as Router,
-  Routes,
-  Route,
-  useNavigate,
-} from "react-router-dom";
-import StudentPage from "./Student";
-import TeacherPage from "./Teacher";
-import TeacherJoinPage from "./TeacherJoinPage";
+import { HashRouter as Router, Routes, Route } from "react-router-dom";
+import StudentPage from "./student/Student";
+import TeacherPage from "./teacher/Teacher";
+import TeacherJoinPage from "./teacher/TeacherJoinPage";
 import { toast } from "sonner";
+import StudentJoinPage from "./student/StudentJoinPage";
 
 const WS_URL = "wss://javacourselive.onrender.com/";
 
@@ -18,39 +14,6 @@ type Role = "student" | "teacher";
 type User = { userId: string; name: string; role: Role };
 
 type CodeUpdate = { userId: string; code: string; name: string };
-
-function JoinPage({ onConnect }: { onConnect: (name: string) => void }) {
-  const [name, setName] = useState("");
-  const navigate = useNavigate();
-
-  function handleConnect() {
-    onConnect(name);
-    navigate("/student");
-  }
-
-  return (
-    <div className="join">
-      <div className="join-header">
-        <h2>Welcome to 3044 Java Course Live Coding!</h2>
-        <img
-          src="./ox.webp"
-          alt="3044 Logo"
-          style={{ width: 60, height: 60 }}
-        />
-      </div>
-      <input
-        placeholder="Enter your name"
-        type="text"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        style={{ width: "80%", marginBottom: 8 }}
-      />
-      <button disabled={!name} onClick={handleConnect}>
-        Connect
-      </button>
-    </div>
-  );
-}
 
 export default function App() {
   const [connected, setConnected] = useState(false);
@@ -86,10 +49,8 @@ export default function App() {
       }
     };
     return () => ws.current?.close();
-    // eslint-disable-next-line
   }, [connected, name, teacherConnected]);
 
-  // Teacher connection logic
   function handleTeacherConnect(password: string, cb?: (err?: string) => void) {
     setTeacherConnected(true);
     setConnected(true);
@@ -150,7 +111,10 @@ export default function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<JoinPage onConnect={handleConnect} />} />
+        <Route
+          path="/"
+          element={<StudentJoinPage onConnect={handleConnect} />}
+        />
         <Route
           path="/student"
           element={

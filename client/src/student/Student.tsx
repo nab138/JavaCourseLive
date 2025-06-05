@@ -1,5 +1,5 @@
 import MonacoEditor from "@monaco-editor/react";
-import { defaultCode } from "./config";
+import { defaultCode } from "../config";
 import { useState } from "react";
 import { toast } from "sonner";
 import "./Student.css";

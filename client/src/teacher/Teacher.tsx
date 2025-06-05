@@ -1,5 +1,5 @@
 import MonacoEditor from "@monaco-editor/react";
-import { defaultCode } from "./config";
+import { defaultCode } from "../config";
 import "./Teacher.css";
 
 type User = { userId: string; name: string; role: string };

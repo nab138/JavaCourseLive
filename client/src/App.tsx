@@ -82,6 +82,8 @@ export default function App() {
           error instanceof Error ? error.message : "Unknown error"
         }`
       );
+      setTeacherConnected(false);
+      setConnected(false);
     };
     ws.current.onmessage = (event) => {
       const data = JSON.parse(event.data);

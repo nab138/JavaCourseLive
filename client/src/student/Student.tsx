@@ -6,13 +6,19 @@ import "./Student.css";
 
 export default function StudentPage({
   studentCode,
+  loading,
   handleStudentChange,
 }: {
-  name: string;
+  loading: boolean;
   studentCode: string;
   handleStudentChange: (v: string | undefined) => void;
 }) {
   const [result, setResult] = useState<string | null>(null);
+
+  if (loading) {
+    return <div className="loading">Loading...</div>;
+  }
+
   return (
     <div style={{ width: "100%", height: "100vh" }}>
       <MonacoEditor

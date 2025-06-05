@@ -6,8 +6,11 @@ import TeacherPage from "./teacher/Teacher";
 import TeacherJoinPage from "./teacher/TeacherJoinPage";
 import { toast } from "sonner";
 import StudentJoinPage from "./student/StudentJoinPage";
+import Redirect from "./Redirect";
 
-const WS_URL = "wss://javacourselive.onrender.com/";
+const PROD_WS_URL = "wss://javacourselive.onrender.com/";
+const DEV_WS_URL = "ws://localhost:3001/";
+const WS_URL = import.meta.env.DEV ? DEV_WS_URL : PROD_WS_URL;
 
 type Role = "student" | "teacher";
 
@@ -18,18 +21,21 @@ type CodeUpdate = { userId: string; code: string; name: string };
 export default function App() {
   const [connected, setConnected] = useState(false);
   const [teacherConnected, setTeacherConnected] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [name, setName] = useState("");
   const [users, setUsers] = useState<User[]>([]);
   const [studentCode, setStudentCode] = useState("");
   const [allCodes, setAllCodes] = useState<Record<string, CodeUpdate>>({});
-  const ws = useRef<WebSocket | null>(null);
 
-  // Student connection logic
+  const ws = useRef<WebSocket | null>(null);
+  const onErrorRef = useRef<(() => void) | null>(null);
+
   useEffect(() => {
     if (!connected || teacherConnected) return;
     ws.current = new WebSocket(WS_URL);
     ws.current.onopen = () => {
       ws.current?.send(JSON.stringify({ type: "join", name, role: "student" }));
+      setLoading(false);
     };
     ws.current.onerror = (error) => {
       toast.error(
@@ -37,6 +43,11 @@ export default function App() {
           error instanceof Error ? error.message : "Unknown error"
         }`
       );
+      setConnected(false);
+      setLoading(false);
+      if (onErrorRef.current) {
+        onErrorRef.current();
+      }
     };
     ws.current.onmessage = (event) => {
       const data = JSON.parse(event.data);
@@ -103,9 +114,11 @@ export default function App() {
     }));
   }
 
-  function handleConnect(name: string) {
+  function handleConnect(name: string, onError: () => void) {
     setName(name);
     setConnected(true);
+    setLoading(true);
+    onErrorRef.current = onError;
   }
 
   return (
@@ -120,11 +133,13 @@ export default function App() {
           element={
             connected && !teacherConnected ? (
               <StudentPage
-                name={name}
+                loading={loading}
                 studentCode={studentCode}
                 handleStudentChange={handleStudentChange}
               />
-            ) : null
+            ) : (
+              <Redirect to="/" />
+            )
           }
         />
         <Route
@@ -132,7 +147,9 @@ export default function App() {
           element={
             !teacherConnected ? (
               <TeacherJoinPage onConnect={handleTeacherConnect} />
-            ) : null
+            ) : (
+              <Redirect to="/teacher/dashboard" />
+            )
           }
         />
         <Route
@@ -144,7 +161,9 @@ export default function App() {
                 allCodes={allCodes}
                 handleTeacherEdit={handleTeacherEdit}
               />
-            ) : null
+            ) : (
+              <Redirect to="/teacher" />
+            )
           }
         />
       </Routes>

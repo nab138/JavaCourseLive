@@ -4,13 +4,15 @@ import { useNavigate } from "react-router";
 export default function StudentJoinPage({
   onConnect,
 }: {
-  onConnect: (name: string) => void;
+  onConnect: (name: string, onError: () => void) => void;
 }) {
   const [name, setName] = useState("");
   const navigate = useNavigate();
 
   function handleConnect() {
-    onConnect(name);
+    onConnect(name, () => {
+      navigate("/");
+    });
     navigate("/student");
   }
 

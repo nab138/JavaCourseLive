@@ -12,7 +12,6 @@ app.use(cors());
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
-// Track users and their code
 const users = new Map(); // id -> { name, role, ws, code }
 
 wss.on("connection", (ws) => {
@@ -24,14 +23,14 @@ wss.on("connection", (ws) => {
       const data = JSON.parse(msg.toString());
       if (data.type === "join") {
         if (data.role === "teacher") {
-          // Simple password check (from .env)
-          const correctPassword = process.env.TEACHER_PASSWORD || "secret";
+          const correctPassword = process.env.TEACHER_PASSWORD;
           if (data.password !== correctPassword) {
             ws.send(JSON.stringify({ type: "error", message: "Invalid password" }));
             ws.close();
             return;
           }
           isTeacher = true;
+          broadcastAllCodeToTeacher(ws);
         }
         userId = Math.random().toString(36).slice(2);
         users.set(userId, { name: data.name, role: data.role, ws, code: "" });
@@ -49,7 +48,6 @@ wss.on("connection", (ws) => {
           });
         }
       } else if (data.type === "editForStudent") {
-        // { type: 'editForStudent', userId, code }
         const student = users.get(data.userId);
         if (student && student.ws) {
           student.ws.send(
@@ -80,6 +78,23 @@ function broadcastUserList() {
     }
   }
 }
+
+function broadcastAllCodeToTeacher(ws: any) {
+  for (const [userId, u] of users.entries()) {
+    if (u.role === "student") {
+      ws.send(
+        JSON.stringify({
+          type: "codeUpdate",
+          userId,
+          code: u.code,
+          name: u.name,
+        })
+      );
+    }
+  }
+}
+  
+    
 
 function broadcastToTeachers(msg: any) {
   for (const u of users.values()) {

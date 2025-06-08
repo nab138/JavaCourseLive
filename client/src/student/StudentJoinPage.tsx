@@ -1,18 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 
-export default function StudentJoinPage({
-  onConnect,
-}: {
-  onConnect: (name: string, onError: () => void) => void;
-}) {
+export default function StudentJoinPage() {
   const [name, setName] = useState("");
   const navigate = useNavigate();
 
   function handleConnect() {
-    onConnect(name, () => {
-      navigate("/");
-    });
+    localStorage.setItem("studentName", name);
     navigate("/student");
   }
 

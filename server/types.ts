@@ -1,9 +1,19 @@
-type JoinData = {
+import { WebSocket } from "ws";
+
+type StudentJoinData = {
   type: "join";
   name: string;
-  role: "teacher" | "student";
-  password?: string;
+  role: "student";
 };
+
+type TeacherJoinData = {
+  type: "join";
+  name: string;
+  role: "teacher";
+  password: string;
+};
+
+type JoinData = StudentJoinData | TeacherJoinData;
 
 type CodeData = {
   type: "code";
@@ -16,4 +26,21 @@ type EditForStudentData = {
   code: string;
 };
 
-export type IncomingMessageData = JoinData | CodeData | EditForStudentData;
+type SetDefaultCodeData = {
+  type: "setDefaultCode";
+  code: string;
+  forceOverwrite?: boolean;
+};
+
+export type IncomingMessageData =
+  | JoinData
+  | CodeData
+  | EditForStudentData
+  | SetDefaultCodeData;
+
+export type User = {
+  name: string;
+  role: "teacher" | "student";
+  code?: string;
+  ws: WebSocket;
+};

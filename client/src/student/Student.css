@@ -4,6 +4,16 @@
   left: 0;
   right: 0;
   z-index: 999;
+  background-color: #0006;
+  border-top: #888 solid 1px;
+}
+
+.output-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0 1rem;
 }
 
 .output {
@@ -16,9 +26,6 @@
 }
 
 .run-button {
-  position: absolute;
-  bottom: 25px;
-  right: 25px;
   background-color: #4caf50; /* Green */
   color: white;
   border: none;

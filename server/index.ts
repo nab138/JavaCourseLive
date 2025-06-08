@@ -3,7 +3,7 @@ import http from "http";
 import { WebSocketServer } from "ws";
 import cors from "cors";
 import dotenv from "dotenv";
-import type { IncomingMessageData } from "./types";
+import type { IncomingMessageData, User } from "./types";
 
 dotenv.config();
 
@@ -13,10 +13,13 @@ app.use(cors());
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
-const users = new Map<
-  string,
-  { name: string; role: string; ws: any; code: string }
->();
+const users = new Map<string, User>();
+
+let defaultCode = `public class Main {
+    public static void main(String[] args) {
+        // Write your Java code here
+    }
+}`;
 
 wss.on("connection", (ws) => {
   let userId: string | null = null;
@@ -35,11 +38,29 @@ wss.on("connection", (ws) => {
             ws.close();
             return;
           }
+          ws.send(
+            JSON.stringify({
+              type: "defaultCodeUpdated",
+              code: defaultCode,
+              supressNotification: true,
+            })
+          );
           isTeacher = true;
-          broadcastAllCodeToTeacher(ws);
+        } else {
+          ws.send(
+            JSON.stringify({
+              type: "code",
+              code: defaultCode,
+            })
+          );
         }
         userId = Math.random().toString(36).slice(2);
-        users.set(userId, { name: data.name, role: data.role, ws, code: "" });
+        users.set(userId, {
+          name: data.name,
+          role: data.role,
+          ws,
+          code: defaultCode,
+        });
         ws.send(JSON.stringify({ type: "joined", userId }));
         broadcastUserList();
       } else if (data.type === "code") {
@@ -54,8 +75,22 @@ wss.on("connection", (ws) => {
         }
       } else if (data.type === "editForStudent") {
         const student = users.get(data.userId);
+        student!.code = data.code;
         if (student && student.ws) {
           student.ws.send(JSON.stringify({ type: "code", code: data.code }));
+        }
+      } else if (data.type === "setDefaultCode") {
+        if (!isTeacher) return;
+        defaultCode = data.code;
+        broadcastToTeachers({
+          type: "defaultCodeUpdated",
+          code: defaultCode,
+        });
+        if (!data.forceOverwrite) return;
+        for (const user of users.values()) {
+          if (user.role === "student") {
+            user.ws.send(JSON.stringify({ type: "code", code: defaultCode }));
+          }
         }
       }
     } catch (e) {}
@@ -74,25 +109,11 @@ function broadcastUserList() {
     userId: id,
     name: u.name,
     role: u.role,
+    code: u.code,
   }));
   for (const u of users.values()) {
     if (u.role === "teacher") {
       u.ws.send(JSON.stringify({ type: "userList", users: userList }));
-    }
-  }
-}
-
-function broadcastAllCodeToTeacher(ws: any) {
-  for (const [userId, u] of users.entries()) {
-    if (u.role === "student") {
-      ws.send(
-        JSON.stringify({
-          type: "codeUpdate",
-          userId,
-          code: u.code,
-          name: u.name,
-        })
-      );
     }
   }
 }

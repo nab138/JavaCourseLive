@@ -1,5 +1,3 @@
-export const defaultCode = `public class Main {
-    public static void main(String[] args) {
-        // Write your Java code here
-    }
-}`;
+const PROD_WS_URL = "wss://javacourselive.onrender.com/";
+const DEV_WS_URL = "ws://localhost:3001/";
+export const WS_URL = import.meta.env.DEV ? DEV_WS_URL : PROD_WS_URL;

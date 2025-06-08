@@ -2,7 +2,6 @@
   height: 100vh;
   display: flex;
   flex-direction: column;
-  background: #181818;
 }
 
 .teacher-editors {
@@ -44,4 +43,52 @@
   flex: 1 1 0%;
   min-width: 0;
   min-height: 0;
+}
+
+.teacher-settings-button {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 50px;
+  height: 50px;
+  background-color: rgb(79, 149, 230);
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 0;
+  font-size: 20px;
+  user-select: none;
+  outline: none;
+}
+
+.teacher-settings {
+  position: fixed;
+  bottom: 0;
+  top: 0;
+  right: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
+  gap: 1rem;
+  border-left: #888 solid 1px;
+  z-index: 999;
+  background-color: #242424;
+}
+
+.teacher-settings-item {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  justify-content: center;
+  align-items: center;
+}
+
+.default-code-editor {
+  border-radius: 10px;
 }

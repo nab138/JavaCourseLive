@@ -1,19 +1,55 @@
 import MonacoEditor from "@monaco-editor/react";
-import { defaultCode } from "../config";
-import { useState } from "react";
+import { WS_URL } from "../config";
+import { useState, useRef, useEffect } from "react";
 import { toast } from "sonner";
 import "./Student.css";
+import { useNavigate } from "react-router-dom";
+import runJava from "./piston";
+import { FaPlay } from "react-icons/fa";
 
-export default function StudentPage({
-  studentCode,
-  loading,
-  handleStudentChange,
-}: {
-  loading: boolean;
-  studentCode: string;
-  handleStudentChange: (v: string | undefined) => void;
-}) {
+export default function StudentPage() {
+  const [studentCode, setStudentCode] = useState("");
+  const [loading, setLoading] = useState(false);
+  const ws = useRef<WebSocket | null>(null);
   const [result, setResult] = useState<string | null>(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    ws.current = new WebSocket(WS_URL);
+    ws.current.onopen = () => {
+      const name = localStorage.getItem("studentName") || "Student";
+      ws.current?.send(JSON.stringify({ type: "join", name, role: "student" }));
+      setLoading(false);
+      toast.success("Connected successfully!");
+    };
+    ws.current.onerror = (event) => {
+      toast.error(
+        `WebSocket error: ${
+          event instanceof Error ? event.message : "Unknown error"
+        }`
+      );
+      navigate("/");
+    };
+    ws.current.onclose = (event) => {
+      setLoading(false);
+      if (event.code !== 1000) {
+        toast.error("WebSocket connection closed unexpectedly");
+      }
+      navigate("/");
+    };
+    ws.current.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.type === "code") {
+        setStudentCode(data.code);
+      }
+    };
+    return () => ws.current?.close();
+  }, []);
+
+  function handleStudentChange(value: string | undefined) {
+    setStudentCode(value || "");
+    ws.current?.send(JSON.stringify({ type: "code", code: value || "" }));
+  }
 
   if (loading) {
     return <div className="loading">Loading...</div>;
@@ -28,59 +64,26 @@ export default function StudentPage({
         value={studentCode}
         onChange={handleStudentChange}
         options={{ fontSize: 16 }}
-        defaultValue={defaultCode}
+        defaultValue={`// Please wait for your teacher to prepare your starting code...`}
       />
-      {result && (
+      {
         <div className="output-container">
-          <h3>Output:</h3>
-          <pre className="output">{result}</pre>
+          <div className="output-header">
+            <h3>Program Output</h3>
+            <button
+              className="run-button"
+              onClick={() => {
+                setResult("Running...");
+                runJava(studentCode, setResult);
+              }}
+            >
+              <FaPlay />
+              Run
+            </button>
+          </div>
+          {result && <pre className="output">{result}</pre>}
         </div>
-      )}
-      <button
-        className="run-button"
-        onClick={() => {
-          // use piston api to run code
-          let payload = {
-            language: "java",
-            version: "15.0.2",
-            files: [
-              {
-                name: "Main.java",
-                content: studentCode,
-              },
-            ],
-          };
-          fetch("https://emkc.org/api/v2/piston/execute", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(payload),
-          })
-            .then((response) => response.json())
-            .then((data) => {
-              if (data.run) {
-                setResult(data.run.output);
-                if (data.run.output === "") {
-                  toast.warning("No output generated.");
-                }
-              } else {
-                toast.error(
-                  `Error running code: ${data.error || "Unknown error"}`
-                );
-              }
-            })
-            .catch((error) => {
-              toast.error(
-                `Error running code: ${
-                  error instanceof Error ? error.message : "Unknown error"
-                }`
-              );
-            });
-        }}
-      >
-        Run Code
-      </button>
+      }
     </div>
   );
 }

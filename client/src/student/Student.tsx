@@ -73,8 +73,17 @@ export default function StudentPage() {
             <button
               className="run-button"
               onClick={() => {
-                setResult("Running...");
-                runJava(studentCode, setResult);
+                toast.promise(runJava(studentCode, setResult), {
+                  loading: "Running your code...",
+                  success: "Code executed successfully!",
+                  error: (error) => {
+                    return {
+                      type:
+                        error === "No output generated." ? "warning" : "error",
+                      message: error instanceof Error ? error.message : error,
+                    };
+                  },
+                });
               }}
             >
               <FaPlay />

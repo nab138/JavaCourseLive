@@ -3,6 +3,7 @@ import http from "http";
 import { WebSocketServer } from "ws";
 import cors from "cors";
 import dotenv from "dotenv";
+import type { IncomingMessageData } from "./types";
 
 dotenv.config();
 
@@ -12,7 +13,10 @@ app.use(cors());
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
-const users = new Map(); // id -> { name, role, ws, code }
+const users = new Map<
+  string,
+  { name: string; role: string; ws: any; code: string }
+>();
 
 wss.on("connection", (ws) => {
   let userId: string | null = null;
@@ -20,12 +24,14 @@ wss.on("connection", (ws) => {
 
   ws.on("message", (msg) => {
     try {
-      const data = JSON.parse(msg.toString());
+      const data = JSON.parse(msg.toString()) as IncomingMessageData;
       if (data.type === "join") {
         if (data.role === "teacher") {
           const correctPassword = process.env.TEACHER_PASSWORD;
           if (data.password !== correctPassword) {
-            ws.send(JSON.stringify({ type: "error", message: "Invalid password" }));
+            ws.send(
+              JSON.stringify({ type: "error", message: "Invalid password" })
+            );
             ws.close();
             return;
           }
@@ -37,25 +43,22 @@ wss.on("connection", (ws) => {
         ws.send(JSON.stringify({ type: "joined", userId }));
         broadcastUserList();
       } else if (data.type === "code") {
-        // { type: 'code', code }
         if (userId && users.has(userId)) {
-          users.get(userId).code = data.code;
+          users.get(userId)!.code = data.code;
           broadcastToTeachers({
             type: "codeUpdate",
             userId,
             code: data.code,
-            name: users.get(userId).name,
+            name: users.get(userId)!.name,
           });
         }
       } else if (data.type === "editForStudent") {
         const student = users.get(data.userId);
         if (student && student.ws) {
-          student.ws.send(
-            JSON.stringify({ type: "code", code: data.code })
-          );
+          student.ws.send(JSON.stringify({ type: "code", code: data.code }));
         }
       }
-    } catch (e) { }
+    } catch (e) {}
   });
 
   ws.on("close", () => {
@@ -93,8 +96,6 @@ function broadcastAllCodeToTeacher(ws: any) {
     }
   }
 }
-  
-    
 
 function broadcastToTeachers(msg: any) {
   for (const u of users.values()) {

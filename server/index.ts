@@ -92,6 +92,31 @@ wss.on("connection", (ws) => {
             user.ws.send(JSON.stringify({ type: "code", code: defaultCode }));
           }
         }
+      } else if (data.type === "studentCursor") {
+        if (isTeacher || !userId) return;
+        const cursorData = {
+          type: "highlight",
+          userId,
+          startLineNumber: data.startLineNumber,
+          startColumn: data.startColumn,
+          endLineNumber: data.endLineNumber,
+          endColumn: data.endColumn,
+        };
+        broadcastToTeachers(cursorData);
+      } else if (data.type === "teacherCursor") {
+        if (!isTeacher || !userId) return;
+        const student = users.get(data.userId);
+        if (student) {
+          const cursorData = {
+            type: "highlight",
+            userId: data.userId,
+            startLineNumber: data.startLineNumber,
+            startColumn: data.startColumn,
+            endLineNumber: data.endLineNumber,
+            endColumn: data.endColumn,
+          };
+          student.ws.send(JSON.stringify(cursorData));
+        }
       }
     } catch (e) {}
   });

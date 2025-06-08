@@ -32,11 +32,30 @@ type SetDefaultCodeData = {
   forceOverwrite?: boolean;
 };
 
+type StudentCursorData = {
+  type: "studentCursor";
+  startLineNumber: number;
+  startColumn: number;
+  endLineNumber: number;
+  endColumn: number;
+};
+
+type TeacherCursorData = {
+  type: "teacherCursor";
+  userId: string;
+  startLineNumber: number;
+  startColumn: number;
+  endLineNumber: number;
+  endColumn: number;
+};
+
 export type IncomingMessageData =
   | JoinData
   | CodeData
   | EditForStudentData
-  | SetDefaultCodeData;
+  | SetDefaultCodeData
+  | StudentCursorData
+  | TeacherCursorData;
 
 export type User = {
   name: string;

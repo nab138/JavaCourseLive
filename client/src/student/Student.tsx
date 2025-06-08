@@ -1,4 +1,5 @@
 import MonacoEditor from "@monaco-editor/react";
+import * as monaco from "monaco-editor";
 import { WS_URL } from "../config";
 import { useState, useRef, useEffect } from "react";
 import { toast } from "sonner";
@@ -13,6 +14,8 @@ export default function StudentPage() {
   const ws = useRef<WebSocket | null>(null);
   const [result, setResult] = useState<string | null>(null);
   const navigate = useNavigate();
+  const highlightCollection =
+    useRef<monaco.editor.IEditorDecorationsCollection | null>(null);
 
   useEffect(() => {
     ws.current = new WebSocket(WS_URL);
@@ -28,19 +31,36 @@ export default function StudentPage() {
           event instanceof Error ? event.message : "Unknown error"
         }`
       );
-      navigate("/");
+      if (!import.meta.env.DEV) navigate("/");
     };
     ws.current.onclose = (event) => {
       setLoading(false);
       if (event.code !== 1000) {
         toast.error("WebSocket connection closed unexpectedly");
       }
-      navigate("/");
+      if (!import.meta.env.DEV) navigate("/");
     };
     ws.current.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.type === "code") {
         setStudentCode(data.code);
+      } else if (data.type === "highlight") {
+        console.log("Highlight data received:", data);
+        if (highlightCollection.current) {
+          highlightCollection.current.set([
+            {
+              range: new monaco.Range(
+                data.startLineNumber,
+                data.startColumn,
+                data.endLineNumber,
+                data.endColumn
+              ),
+              options: {
+                inlineClassName: "highlight",
+              },
+            },
+          ]);
+        }
       }
     };
     return () => ws.current?.close();
@@ -65,6 +85,22 @@ export default function StudentPage() {
         onChange={handleStudentChange}
         options={{ fontSize: 16 }}
         defaultValue={`// Please wait for your teacher to prepare your starting code...`}
+        onMount={(editor) => {
+          highlightCollection.current = editor.createDecorationsCollection();
+          editor.onDidChangeCursorSelection((e) => {
+            let selection = e.selection;
+            ws.current?.send(
+              JSON.stringify({
+                type: "studentCursor",
+                startLineNumber: selection.startLineNumber,
+                startColumn: selection.startColumn,
+                endLineNumber: selection.endLineNumber,
+                endColumn: selection.endColumn,
+              })
+            );
+            editor.revealRangeInCenter(selection, 0);
+          });
+        }}
       />
       {
         <div className="output-container">

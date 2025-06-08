@@ -1,4 +1,5 @@
 import MonacoEditor from "@monaco-editor/react";
+import * as monaco from "monaco-editor";
 import { WS_URL } from "../config";
 import "./Teacher.css";
 import { useState, useRef, useEffect } from "react";
@@ -21,6 +22,9 @@ export default function TeacherPage() {
   const [tmpCode, setTmpCode] = useState<string>(defaultCode);
   const ws = useRef<WebSocket | null>(null);
   const navigate = useNavigate();
+  const highlightCollections = useRef<
+    Record<string, monaco.editor.IEditorDecorationsCollection | null>
+  >({});
 
   useEffect(() => {
     const password = localStorage.getItem("teacherPassword");
@@ -77,6 +81,22 @@ export default function TeacherPage() {
         setTmpCode(data.code);
         if (!data.supressNotification)
           toast.success("Default code updated successfully!");
+      } else if (data.type === "highlight") {
+        if (highlightCollections.current[data.userId]) {
+          highlightCollections.current[data.userId]!.set([
+            {
+              range: new monaco.Range(
+                data.startLineNumber,
+                data.startColumn,
+                data.endLineNumber,
+                data.endColumn
+              ),
+              options: {
+                inlineClassName: "highlight",
+              },
+            },
+          ]);
+        }
       }
     };
     return () => ws.current?.close();
@@ -112,6 +132,26 @@ export default function TeacherPage() {
                   onChange={(v) => handleTeacherEdit(u.userId, v)}
                   options={{ fontSize: 14 }}
                   height="100%"
+                  onMount={(editor) => {
+                    if (!highlightCollections.current[u.userId]) {
+                      highlightCollections.current[u.userId] =
+                        editor.createDecorationsCollection();
+                    }
+                    editor.onDidChangeCursorSelection((e) => {
+                      let selection = e.selection;
+                      ws.current?.send(
+                        JSON.stringify({
+                          type: "teacherCursor",
+                          userId: u.userId,
+                          startLineNumber: selection.startLineNumber,
+                          startColumn: selection.startColumn,
+                          endLineNumber: selection.endLineNumber,
+                          endColumn: selection.endColumn,
+                        })
+                      );
+                      editor.revealRangeInCenter(selection, 0);
+                    });
+                  }}
                 />
               </div>
             </div>

@@ -5,7 +5,7 @@ import "./Teacher.css";
 import { useState, useRef, useEffect } from "react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router";
-import { FaCog } from "react-icons/fa";
+import { FaCog, FaThumbtack } from "react-icons/fa";
 
 type User = { userId: string; name: string; role: string };
 type CodeUpdate = { userId: string; code: string; name: string };
@@ -25,6 +25,7 @@ export default function TeacherPage() {
   const highlightCollections = useRef<
     Record<string, monaco.editor.IEditorDecorationsCollection | null>
   >({});
+  const [pinnedUser, setPinnedUser] = useState<string | null>(null);
 
   useEffect(() => {
     const password = localStorage.getItem("teacherPassword");
@@ -117,45 +118,156 @@ export default function TeacherPage() {
       {users.filter((u) => u.role === "student").length === 0 && (
         <div className="loading">Waiting for students to join...</div>
       )}
-      <div className="teacher-editors">
-        {users
-          .filter((u) => u.role === "student")
-          .map((u) => (
-            <div className="teacher-editor-card" key={u.userId}>
-              <div className="teacher-editor-title">{u.name}</div>
-              <div className="teacher-editor-monaco">
-                <MonacoEditor
-                  theme="vs-dark"
-                  defaultValue={`// Please wait for your teacher to prepare your starting code...`}
-                  language="java"
-                  value={allCodes[u.userId]?.code || ""}
-                  onChange={(v) => handleTeacherEdit(u.userId, v)}
-                  options={{ fontSize: 14 }}
-                  height="100%"
-                  onMount={(editor) => {
-                    if (!highlightCollections.current[u.userId]) {
-                      highlightCollections.current[u.userId] =
-                        editor.createDecorationsCollection();
-                    }
-                    editor.onDidChangeCursorSelection((e) => {
-                      let selection = e.selection;
-                      ws.current?.send(
-                        JSON.stringify({
-                          type: "teacherCursor",
-                          userId: u.userId,
-                          startLineNumber: selection.startLineNumber,
-                          startColumn: selection.startColumn,
-                          endLineNumber: selection.endLineNumber,
-                          endColumn: selection.endColumn,
-                        })
-                      );
-                      editor.revealRangeInCenter(selection, 0);
-                    });
-                  }}
-                />
+      <div
+        className={
+          pinnedUser
+            ? "teacher-editors"
+            : "teacher-editors no-pin"
+        }
+      >
+        {pinnedUser ? (
+          <div className="pinned-editor-container">
+            {users
+              .filter((u) => u.userId === pinnedUser)
+              .map((u) => (
+                <div className="pinned-editor-card" key={u.userId}>
+                  <div className="pinned-editor-title">
+                    {u.name}
+                    <FaThumbtack
+                      className="pin-button"
+                      onClick={() => setPinnedUser(null)}
+                      style={{ color: "#4fa5e6" }}
+                    />
+                  </div>
+                  <div className="pinned-editor-monaco">
+                    <MonacoEditor
+                      theme="vs-dark"
+                      defaultValue={`// Please wait for your teacher to prepare your starting code...`}
+                      language="java"
+                      value={allCodes[u.userId]?.code || ""}
+                      onChange={(v) => handleTeacherEdit(u.userId, v)}
+                      options={{ fontSize: 16 }}
+                      height="100%"
+                      onMount={(editor) => {
+                        if (!highlightCollections.current[u.userId]) {
+                          highlightCollections.current[u.userId] =
+                            editor.createDecorationsCollection();
+                        }
+                        editor.onDidChangeCursorSelection((e) => {
+                          let selection = e.selection;
+                          ws.current?.send(
+                            JSON.stringify({
+                              type: "teacherCursor",
+                              userId: u.userId,
+                              startLineNumber: selection.startLineNumber,
+                              startColumn: selection.startColumn,
+                              endLineNumber: selection.endLineNumber,
+                              endColumn: selection.endColumn,
+                            })
+                          );
+                          editor.revealRangeInCenter(selection, 0);
+                        });
+                      }}
+                    />
+                  </div>
+                </div>
+              ))}
+          </div>
+        ) : (
+          users
+            .filter((u) => u.role === "student")
+            .map((u) => (
+              <div className="teacher-editor-card grid-mode" key={u.userId}>
+                <div className="teacher-editor-title grid-mode">
+                  {u.name}
+                  <FaThumbtack
+                    className="pin-button"
+                    onClick={() => setPinnedUser(u.userId)}
+                  />
+                </div>
+                <div className="teacher-editor-monaco grid-mode">
+                  <MonacoEditor
+                    theme="vs-dark"
+                    defaultValue={`// Please wait for your teacher to prepare your starting code...`}
+                    language="java"
+                    value={allCodes[u.userId]?.code || ""}
+                    onChange={(v) => handleTeacherEdit(u.userId, v)}
+                    options={{ fontSize: 14 }}
+                    height="100%"
+                    onMount={(editor) => {
+                      if (!highlightCollections.current[u.userId]) {
+                        highlightCollections.current[u.userId] =
+                          editor.createDecorationsCollection();
+                      }
+                      editor.onDidChangeCursorSelection((e) => {
+                        let selection = e.selection;
+                        ws.current?.send(
+                          JSON.stringify({
+                            type: "teacherCursor",
+                            userId: u.userId,
+                            startLineNumber: selection.startLineNumber,
+                            startColumn: selection.startColumn,
+                            endLineNumber: selection.endLineNumber,
+                            endColumn: selection.endColumn,
+                          })
+                        );
+                        editor.revealRangeInCenter(selection, 0);
+                      });
+                    }}
+                  />
+                </div>
               </div>
-            </div>
-          ))}
+            ))
+        )}
+        {/* Side editors grid remains for pinned mode only */}
+        {pinnedUser && (
+          <div className="side-editors-grid">
+            {users
+              .filter((u) => u.role === "student" && u.userId !== pinnedUser)
+              .map((u) => (
+                <div className="side-editor-card" key={u.userId}>
+                  <div className="side-editor-title">
+                    {u.name}
+                    <FaThumbtack
+                      className="pin-button"
+                      onClick={() => setPinnedUser(u.userId)}
+                    />
+                  </div>
+                  <div className="side-editor-monaco">
+                    <MonacoEditor
+                      theme="vs-dark"
+                      defaultValue={`// Please wait for your teacher to prepare your starting code...`}
+                      language="java"
+                      value={allCodes[u.userId]?.code || ""}
+                      onChange={(v) => handleTeacherEdit(u.userId, v)}
+                      options={{ fontSize: 12 }}
+                      height="100%"
+                      onMount={(editor) => {
+                        if (!highlightCollections.current[u.userId]) {
+                          highlightCollections.current[u.userId] =
+                            editor.createDecorationsCollection();
+                        }
+                        editor.onDidChangeCursorSelection((e) => {
+                          let selection = e.selection;
+                          ws.current?.send(
+                            JSON.stringify({
+                              type: "teacherCursor",
+                              userId: u.userId,
+                              startLineNumber: selection.startLineNumber,
+                              startColumn: selection.startColumn,
+                              endLineNumber: selection.endLineNumber,
+                              endColumn: selection.endColumn,
+                            })
+                          );
+                          editor.revealRangeInCenter(selection, 0);
+                        });
+                      }}
+                    />
+                  </div>
+                </div>
+              ))}
+          </div>
+        )}
       </div>
       <button
         className="teacher-settings-button"

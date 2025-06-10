@@ -119,11 +119,7 @@ export default function TeacherPage() {
         <div className="loading">Waiting for students to join...</div>
       )}
       <div
-        className={
-          pinnedUser
-            ? "teacher-editors"
-            : "teacher-editors no-pin"
-        }
+        className={pinnedUser ? "teacher-editors" : "teacher-editors no-pin"}
       >
         {pinnedUser ? (
           <div className="pinned-editor-container">

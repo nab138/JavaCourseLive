@@ -13,13 +13,20 @@ export default function StudentJoinPage() {
   return (
     <div className="join">
       <div className="join-header">
-        <h2>Welcome to 3044 Java Course Live Coding!</h2>
+        <h2 style={{ marginBottom: 0 }}>
+          Welcome to 3044 Java Course Live Coding!
+        </h2>
         <img
           src="./ox.webp"
           alt="3044 Logo"
           style={{ width: 60, height: 60 }}
         />
       </div>
+
+      <p style={{ marginTop: 0 }}>
+        Please note this software is in beta. If you see any issues, let the
+        teacher know!
+      </p>
       <input
         placeholder="Enter your name"
         type="text"

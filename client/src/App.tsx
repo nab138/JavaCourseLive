@@ -1,4 +1,4 @@
-import { HashRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import StudentPage from "./student/Student";
 import TeacherPage from "./teacher/Teacher";
 import TeacherJoinPage from "./teacher/TeacherJoinPage";
@@ -7,7 +7,7 @@ import "./App.css";
 
 export default function App() {
   return (
-    <Router>
+    <Router basename={"/"}>
       <Routes>
         <Route path="/" element={<StudentJoinPage />} />
         <Route path="/student" element={<StudentPage />} />

@@ -1,16 +1,35 @@
 import express from "express";
 import http from "http";
+import https from "https";
 import { WebSocketServer } from "ws";
 import cors from "cors";
 import dotenv from "dotenv";
 import type { IncomingMessageData, User } from "./types";
+import fs from "fs";
 
 dotenv.config();
 
 const app = express();
 app.use(cors());
 
-const server = http.createServer(app);
+let server;
+
+if (process.env.PROD === "yes") {
+  server = https.createServer(
+    {
+      cert: fs.readFileSync(
+        "/etc/letsencrypt/live/javacourseliveapi.serverpit.com/fullchain.pem"
+      ),
+      key: fs.readFileSync(
+        "/etc/letsencrypt/live/javacourseliveapi.serverpit.com/privkey.pem"
+      ),
+    },
+    app
+  );
+} else {
+  server = http.createServer(app);
+}
+
 const wss = new WebSocketServer({ server });
 
 const users = new Map<string, User>();
